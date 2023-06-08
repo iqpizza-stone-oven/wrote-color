@@ -1,0 +1,10 @@
+[package]
+name = "wrote_color"
+version = "0.1.0"
+authors = ["iqpizza6349 <iqpizza6349@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+futures = "0.3.28"
+tokio = "1.28.2"
+websocket = "0.26.5"
