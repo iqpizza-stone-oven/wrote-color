@@ -1,0 +1,5 @@
+# ignore build or something like that.
+target
+
+# ignore manifast binary or something similar like that
+*.lock
