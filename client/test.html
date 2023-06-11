@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+    <head>
+        <style>
+           canvas {
+               border:1px solid #d3d3d3;
+               background-color: #f1f1f1;
+           }
+        </style>
+    </head>
+
+    <body>
+        <script>
+            const client = window.sessionStorage.getItem("client");
+            if (!client) {
+                let randomId = Math.random().toString(36).substring(2, 12);
+                window.sessionStorage.setItem("client", randomId);
+                window.location.reload();
+            }
+
+            var gameContext = {
+                canvas: document.createElement("canvas"),
+                start: function() {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = 500;
+                },
+                clear: function() {
+                    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+            }
+
+            var connection = new WebSocket(`ws://127.0.0.1:8080/ws/${client}`);
+            connection.onopen = (e) => {
+                gameContext.start();
+                connection.send("ping");
+                connection.send("Hello?");
+            }
+
+            connection.onmessage = (e) => {
+                console.log(e);
+            }
+        </script>
+    </body>
+</html>
