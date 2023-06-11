@@ -3,3 +3,7 @@ target
 
 # ignore manifast binary or something similar like that
 *.lock
+
+# ignore vscode or something like editor setting(config) files
+.vscode
+.iml
