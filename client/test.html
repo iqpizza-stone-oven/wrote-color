@@ -3,14 +3,25 @@
 <html>
     <head>
         <style>
-           canvas {
-               border:1px solid #d3d3d3;
-               background-color: #f1f1f1;
-           }
+            canvas {
+                border:1px solid #d3d3d3;
+                background-color: #f1f1f1;
+            }
+
+            input {
+                width: 500px;
+                height: 32px;
+                font-size: 15px;
+                border: 0;
+                border-radius: 15px;
+                outline: none;
+                padding-left: 10px;
+                background-color: rgb(166, 165, 165);
+            }
         </style>
     </head>
 
-    <body>
+    <body style="margin: 0;">
         <script>
             const client = window.sessionStorage.getItem("client");
             if (!client) {
@@ -22,8 +33,10 @@
             var gameContext = {
                 canvas: document.createElement("canvas"),
                 start: function() {
-                    this.canvas.width = window.innerWidth;
+                    this.canvas.width = window.outerWidth - 20;
                     this.canvas.height = 500;
+                    this.context = this.canvas.getContext("2d");
+                    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
                 },
                 clear: function() {
                     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -41,5 +54,8 @@
                 console.log(e);
             }
         </script>
+        <div style="text-align:center">
+            <input>
+        </div>
     </body>
 </html>
