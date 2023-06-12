@@ -54,7 +54,6 @@ async fn client_msg(id: &str, msg: Message, clients: &Clients) {
 
     let mut locked = clients.write().await;
     if let Some(v) = locked.get_mut(id) {
-        println!("{}", (&message).to_string());
         v.word = (&message).to_string();
     }
 }
