@@ -42,16 +42,36 @@
                     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 }
             }
+            const color = ["RED", "GREEN", "BLACK", "BLUE", "YELLOW"];
 
             var connection = new WebSocket(`ws://127.0.0.1:8080/ws/${client}`);
             connection.onopen = (e) => {
                 gameContext.start();
                 connection.send("ping");
-                connection.send("Hello?");
             }
 
             connection.onmessage = (e) => {
-                console.log(e);
+                const message = e.data;
+                if (message === "pong") {
+                    fetch("http://127.0.0.1:8080/register", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "Access-Control-Allow-Origin": "*"
+                        },
+                        body: JSON.stringify({
+                            color: color[parseInt(Math.random() * (color.length - 1))]
+                        })
+                    });
+                    return;
+                }
+
+                let state = JSON.parse(message);
+                gameContext.clear();
+                ctx = gameContext.context;
+                ctx.fillStyle = String(state.position).toLowerCase();
+                ctx.fillRect(state.position.x,state.position.y,100,100);
             }
         </script>
         <div style="text-align:center">
