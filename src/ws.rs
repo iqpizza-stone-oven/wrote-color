@@ -14,19 +14,13 @@ pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut 
             eprintln!("error sending websocket msg: {}", e);
         }
     }));
-
-    let cloned_sender = client_sender.clone();
-    client.sender = Some(client_sender);
+    
     clients.write().await.insert(id.clone(), client);
+    let sender = client_sender.clone();
 
     println!("{} connected", id);
-    let message = Message::text("Hello, Client");
-    if let Err(e) = cloned_sender.send(Ok(message)) {
-        eprintln!("error sending message to client: {}", e);
-    }
-
+    tokio::task::spawn(send_periodic_messages(client_sender, boxes));
     while let Some(result) = client_ws_rcv.next().await {
-
         let msg = match result {
             Ok(msg) => msg,
             Err(e) => {
@@ -34,14 +28,14 @@ pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut 
                 break;
             }
         };
-        client_msg(&id, msg, &clients).await;
+        client_msg(&id, msg, &clients, &sender).await;
     }
 
     clients.write().await.remove(&id);
     println!("{} disconnected", id);
 }
 
-async fn client_msg(id: &str, msg: Message, clients: &Clients) {
+async fn client_msg(id: &str, msg: Message, clients: &Clients, sender: &UnboundedSender<Result<Message, Error>>) {
     println!("received message from {}: {:?}", id, msg);
     let message = match msg.to_str() {
         Ok(v) => v,
@@ -49,6 +43,9 @@ async fn client_msg(id: &str, msg: Message, clients: &Clients) {
     };
 
     if message == "ping" || message == "ping\n" {
+        if let Err(e) = sender.send(Ok(Message::text("pong"))) {
+            eprintln!("Error when pong: {}", e);
+        }
         return;
     }
 
