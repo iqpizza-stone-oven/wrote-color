@@ -1,10 +1,36 @@
-use crate::{Client, Clients};
+use crate::{Client, Clients, Boxes};
 use futures::{FutureExt, StreamExt};
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::time::{self, Duration};
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use warp::ws::{Message, WebSocket};
+use warp::{ws::{Message, WebSocket}, Error};
 
-pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut client: Client) {
+async fn send_periodic_messages(sender: UnboundedSender<Result<Message, Error>>, boxes: Boxes) {
+    let mut interval = time::interval(Duration::from_millis(42));
+    let mut over_window: Vec<String> = Vec::with_capacity(10);
+    loop {
+        interval.tick().await;
+
+        for data in boxes.write().await.iter_mut() {
+            data.1.position.0 += 24;
+            let json = Message::text(data.1.to_json());
+
+            if let Err(e) = sender.send(Ok(json)) {
+                eprintln!("Error when moving boxes: {}", e);
+                break;
+            }
+            if data.1.position.0 >= 1920 {
+                over_window.push(data.0.to_string());
+            }
+        }
+        
+        for entity_key in over_window.iter() {
+            boxes.write().await.remove(entity_key);
+        }
+    }
+}
+
+pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, boxes: Boxes, client: Client) {
     let (client_ws_sender, mut client_ws_rcv) = ws.split();
     let (client_sender, client_rcv) = mpsc::unbounded_channel();
 
