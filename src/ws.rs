@@ -6,7 +6,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::{ws::{Message, WebSocket}, Error};
 
 async fn send_periodic_messages(sender: UnboundedSender<Result<Message, Error>>, boxes: Boxes) {
-    let mut interval = time::interval(Duration::from_millis(42));
+    let mut interval = time::interval(Duration::from_millis(48));
     let mut over_window: Vec<String> = Vec::with_capacity(10);
     loop {
         interval.tick().await;
@@ -17,7 +17,7 @@ async fn send_periodic_messages(sender: UnboundedSender<Result<Message, Error>>,
 
             if let Err(e) = sender.send(Ok(json)) {
                 eprintln!("Error when moving boxes: {}", e);
-                break;
+                return;
             }
             if data.1.position.0 >= 1920 {
                 over_window.push(data.0.to_string());
