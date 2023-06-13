@@ -42,10 +42,16 @@ fn main() {
             .and(with_boxes(boxes.clone()))
             .and_then(game_handler::ws_handler);
 
+        let input_routes = warp::path("input")
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(with_boxes(boxes.clone()))
+            .and_then(game_handler::answer_handle);
+
         let routes = health_route
             .or(register_routes)
-            .with(warp::cors().allow_any_origin().allow_methods(vec!["GET", "POST", "DELETE"]))
             .or(ws_route)
+            .or(input_routes)
             .with(warp::cors()
                     .allow_any_origin()
                     .allow_headers(vec!["Access-Control-Allow-Origin", "Origin", "Accept", "X-Requested-With", "Content-Type"])

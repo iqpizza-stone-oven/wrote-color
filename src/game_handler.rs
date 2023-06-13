@@ -4,15 +4,34 @@ use uuid::Uuid;
 use warp::{http::StatusCode, Reply, reply::with_header};
 
 #[derive(Deserialize, Debug)]
-pub struct BoxCreateRequest {
+pub struct BoxRequest {
     color: String
 }
 
-pub async fn register_handler(body: BoxCreateRequest, boxes: Boxes) -> Result<impl Reply> {
+pub async fn register_handler(body: BoxRequest, boxes: Boxes) -> Result<impl Reply> {
     let uuid = Uuid::new_v4().as_simple().to_string();
     let color = body.color;
     register_box(uuid.clone(), color, boxes).await;
     Ok(with_header(StatusCode::CREATED, "Access-Control-Allow-Origin", "*"))
+}
+
+pub async fn answer_handle(body: BoxRequest, boxes: Boxes) -> Result<impl Reply> {
+    let result = is_correct(body.color, boxes.clone()).await;
+    if result == "null" {
+        return Ok(StatusCode:: NOT_FOUND)
+    }
+
+    boxes.write().await.remove(&result);
+    Ok(StatusCode::OK)
+}
+
+async fn is_correct(color: String, boxes: Boxes) -> String {
+    for iter in boxes.read().await.clone().into_iter() {
+        if iter.1.color == color {
+            return iter.0;
+        }
+    }
+    return "null".to_string();
 }
 
 async fn register_box(id: String, color: String, boxes: Boxes) {
