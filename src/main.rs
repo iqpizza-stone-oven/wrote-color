@@ -8,7 +8,6 @@ use crate::entity::Entity;
 
 mod game_handler;
 mod ws;
-// mod task;
 
 pub type Boxes = Arc<RwLock<HashMap<String, Entity>>>;
 pub type Result<T> = std::result::Result<T, Rejection>;
