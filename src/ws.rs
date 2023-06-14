@@ -55,7 +55,7 @@ async fn client_msg(id: &str, msg: Message, clients: &Clients,
     if message == "mv_event" || message == "mv_event\n" {
         let mut over_window: Vec<String> = Vec::new();
         for data in boxes.write().await.iter_mut() {
-            data.1.position.0 += 24;
+            data.1.position.0 += 24 / clients.read().await.len() as i32;
             let json = Message::text(data.1.to_json());
 
             if let Err(e) = sender.send(Ok(json)) {
