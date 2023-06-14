@@ -8,7 +8,7 @@
                 background-color: #f1f1f1;
             }
 
-            input {
+            .answer {
                 width: 500px;
                 height: 32px;
                 font-size: 15px;
@@ -18,13 +18,21 @@
                 padding-left: 10px;
                 background-color: rgb(166, 165, 165);
             }
+
+            .score {
+                width: 100px;
+                border: 0;
+                border-radius: 15px;
+                outline: none;
+            }
         </style>
     </head>
 
     <body style="margin: 0;">
         <script>
+            let score = 0;
             const client = window.sessionStorage.getItem("client");
-            if (!client) {
+            if (!client || client == null) {
                 let randomId = Math.random().toString(36).substring(2, 12);
                 window.sessionStorage.setItem("client", randomId);
                 window.location.reload();
@@ -46,24 +54,45 @@
 
             var connection = new WebSocket(`ws://127.0.0.1:8080/ws/${client}`);
             connection.onopen = (e) => {
+                if (!client || client == null) {
+                    console.log("ERROR");
+                    window.sessionStorage.clear();
+                    window.location.reload();
+                    return;
+                }
+                score = 0;
+                window.document.getElementById("score").value = score;
                 gameContext.start();
                 connection.send("ping");
             }
 
+            setInterval(function() {
+                let state = connection.readyState;
+                if (state === connection.CONNECTING || state === connection.CLOSE
+                         || state === connection.CLOSING) {
+                    window.location.reload();
+                    return;
+                }
+
+                connection.send("mv_event");
+            }, 42);
+
             connection.onmessage = (e) => {
+                if (!client || client == null) {
+                    console.log("ERROR");
+                    window.sessionStorage.clear();
+                    window.location.reload();
+                    return;
+                }
+
                 const message = e.data;
-                if (message === "pong") {
-                    fetch("http://127.0.0.1:8080/register", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                            "Access-Control-Allow-Origin": "*"
-                        },
-                        body: JSON.stringify({
-                            color: color[parseInt(Math.random() * (color.length - 1))]
-                        })
-                    });
+                if (message === "already") {
+                    return;
+                }
+                else if (message === "pong" || message === "over-window") {
+                    score = 0;
+                    window.document.getElementById("score").value = score;
+                    createBox();
                     return;
                 }
 
@@ -74,10 +103,24 @@
                 ctx.fillRect(state.position.x,state.position.y,100,100);
             }
 
+            function createBox() {
+                fetch("http://127.0.0.1:8080/register", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "Access-Control-Allow-Origin": "*"
+                        },
+                        body: JSON.stringify({
+                            color: color[parseInt(Math.random() * color.length)]
+                        })
+                    });
+            }
+
             function fnEnterKey() {
                 if (window.event.keyCode == 13) {
-                    let input = String(window.document.getElementsByClassName("input")[0].value).toUpperCase();
-                    window.document.getElementsByClassName("input")[0].value = "";
+                    let input = String(window.document.getElementsByClassName("answer")[0].value).toUpperCase();
+                    window.document.getElementsByClassName("answer")[0].value = "";
                     if (!color.includes(input)) {
                         return;
                     }
@@ -94,13 +137,19 @@
                         })
                     })
                     .then((res) => {
+                        score++;
+                        window.document.getElementById("score").value = score;
                         gameContext.clear();
+                        createBox();
                     });
                 }
             }
         </script>
-        <div style="text-align:center">
-            <input class="input" onkeyup="fnEnterKey();">
+        <div style="text-align: center">
+            <input class="answer" onkeyup="fnEnterKey();">
+        </div>
+        <div style="text-align: right">
+            score: <input id="score" class="score" readonly="readonly"/>
         </div>
     </body>
 </html>
