@@ -11,7 +11,9 @@ pub struct BoxRequest {
 pub async fn register_handler(body: BoxRequest, boxes: Boxes) -> Result<impl Reply> {
     let uuid = Uuid::new_v4().as_simple().to_string();
     let color = body.color;
-    register_box(uuid.clone(), color, boxes).await;
+    if boxes.read().await.is_empty() {
+        register_box(uuid.clone(), color, boxes).await;
+    }
     Ok(with_header(StatusCode::CREATED, "Access-Control-Allow-Origin", "*"))
 }
 
